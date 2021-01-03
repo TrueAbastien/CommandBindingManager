@@ -61,57 +61,23 @@ void BindingList::LoadConfig(const ConfigFile& file)
 {
 	if (file.amount() <= 0)
 		return;
-
 	bindings.clear();
-	Binding current = file.commands()[0];
-	QString cmd = current.command, value;
-	int idx, idx2, dist;
 
 	QStringList models = { };
-	//for (int ii = 0; ii < file.models().size();)
-	//{
-	//	if ((idx = cmd.indexOf("{")) >= 0)
-	//	{
-	//		if ((idx2 = cmd.indexOf("}")) >= 0)
-	//		{
-	//			if ((dist = idx - idx2) > 1)
-	//			{
-	//				int modelIndex = cmd.mid(idx + 1, dist - 1).toInt();
-	//				value = (modelIndex == 0) ? QString::number(current.key)
-	//					: (modelIndex > models.size() ? "" : models[modelIndex - 1]);
-
-	//				cmd.remove(idx, dist + 1);
-	//				continue;
-	//			}
-	//		}
-	//	}
-	//	//
-	//}
-
-	for (int ii = 0; ii < file.amount();)
+	for (QString model : file.models())
 	{
-		if ((idx = cmd.indexOf("{")) >= 0)
-		{
-			if ((idx2 = cmd.indexOf("}")) >= 0)
-			{
-				if ((dist = idx - idx2) > 1)
-				{
-					int modelIndex = cmd.mid(idx + 1, dist - 1).toInt();
-					value = (modelIndex == 0) ? QString::number(current.key)
-						: (modelIndex > models.size() ? "" : models[modelIndex - 1]);
-					
-					cmd.remove(idx, dist + 1);
-					continue;
-				}
-			}
-		}
-		bindings.append(Binding(current.key, cmd));
+		while (!__replace(model, models)) {}
+		models.append(model);
+	}
 
-		if (++ii < file.amount())
-		{
-			current = file.commands()[ii];
-			cmd = current.command;
-		}
+	QString cmd;
+	for (Binding bind : file.commands())
+	{
+		cmd = bind.command;
+		while (!__replace(cmd, models)) { }
+
+		cmd.replace("%", QString::number(bind.key));
+		bindings.append(Binding(bind.key, file.prefix() + cmd + file.suffix()));
 	}
 }
 
@@ -150,4 +116,26 @@ void BindingList::Reorder(QTableWidget* widget)
 
 	widget->clear();
 	Fill(widget);
+}
+
+bool BindingList::__replace(QString& target, const QStringList& pool) const
+{
+	int idx, idx2, dist;
+	QString value;
+	if ((idx = target.indexOf("{")) >= 0)
+	{
+		if ((idx2 = target.indexOf("}")) >= 0)
+		{
+			if ((dist = idx - idx2) > 1)
+			{
+				int modelIndex = target.mid(idx + 1, dist - 1).toInt();
+				value = (modelIndex == 0) ? "%" : (modelIndex > pool.size() ? "" : pool[modelIndex - 1]);
+
+				target.remove(idx, dist + 1);
+				target.insert(idx, value);
+				return false;
+			}
+		}
+	}
+	return true;
 }
