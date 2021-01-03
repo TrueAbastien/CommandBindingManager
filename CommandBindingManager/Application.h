@@ -26,6 +26,8 @@ private:
             "", QStandardPaths::LocateOption::LocateDirectory) + "AppData/Roaming/SCP Secret Laboratory/cmdbinding.txt";
     BindingList bindings;
 
+    void LimitIndex();
+
 private slots:
     //
 };

@@ -11,23 +11,22 @@ void BindingList::LoadAt(const QString& filePath)
 {
 	QFile file(filePath);
 	file.open(QFile::ReadWrite | QFile::Text);
+	bindings.clear();
 
+	int idx, size;
 	QString qline;
 	QTextStream in(&file);
 	while (!in.atEnd())
 	{
 		qline = in.readLine();
+		if ((idx = qline.indexOf("#")) >= 0)
+			qline = qline.left(idx);
 
-		if (qline.indexOf("#") == 0)
-			continue;
-		else
+		idx = qline.indexOf(":");
+		size = qline.size();
+		if (idx > 0 && size > idx + 1)
 		{
-			int idx = qline.indexOf(":"),
-				size = qline.size();
-			if (idx > 0 && size > idx + 1)
-			{
-				bindings.append(BindingList::Binding(qline.left(idx).toInt(), qline.mid(idx + 1)));
-			}
+			bindings.append(Binding(qline.left(idx).toInt(), qline.mid(idx + 1)));
 		}
 	}
 
@@ -47,48 +46,73 @@ void BindingList::SaveAt(const QString& filePath)
 	file.close();
 }
 
-void BindingList::LoadFrom(const QString& configName)
+QString BindingList::MakeSave(const QString& fileName)
 {
-	QFile file("ressources/configs/" + configName + ".txt");
-	file.open(QFile::ReadWrite | QFile::Text);
+	SaveAt("ressources/saves/" + fileName + ".txt");
+	return "ressources/saves/" + fileName + ".txt";
+}
 
-	int idx;
-	QString qline, suffix = "", prefix = "";
-	QTextStream in(&file);
-	while (!in.atEnd())
+void BindingList::LoadSave(const QString& fileName)
+{
+	LoadAt("ressources/saves/" + fileName + ".txt");
+}
+
+void BindingList::LoadConfig(const ConfigFile& file)
+{
+	if (file.amount() <= 0)
+		return;
+
+	bindings.clear();
+	Binding current = file.commands()[0];
+	QString cmd = current.command, value;
+	int idx, idx2, dist;
+
+	QStringList models = { };
+	//for (int ii = 0; ii < file.models().size();)
+	//{
+	//	if ((idx = cmd.indexOf("{")) >= 0)
+	//	{
+	//		if ((idx2 = cmd.indexOf("}")) >= 0)
+	//		{
+	//			if ((dist = idx - idx2) > 1)
+	//			{
+	//				int modelIndex = cmd.mid(idx + 1, dist - 1).toInt();
+	//				value = (modelIndex == 0) ? QString::number(current.key)
+	//					: (modelIndex > models.size() ? "" : models[modelIndex - 1]);
+
+	//				cmd.remove(idx, dist + 1);
+	//				continue;
+	//			}
+	//		}
+	//	}
+	//	//
+	//}
+
+	for (int ii = 0; ii < file.amount();)
 	{
-		qline = in.readLine();
-
-		if (qline.indexOf("#") == 0)
-			continue;
-		else
+		if ((idx = cmd.indexOf("{")) >= 0)
 		{
-			if ((idx = qline.indexOf("prefix=")) >= 0)
+			if ((idx2 = cmd.indexOf("}")) >= 0)
 			{
-				prefix = qline.mid(7);
-			}
-			else
-			{
-				if ((idx = qline.indexOf("suffix=")) >= 0)
+				if ((dist = idx - idx2) > 1)
 				{
-					suffix = qline.mid(7);
+					int modelIndex = cmd.mid(idx + 1, dist - 1).toInt();
+					value = (modelIndex == 0) ? QString::number(current.key)
+						: (modelIndex > models.size() ? "" : models[modelIndex - 1]);
+					
+					cmd.remove(idx, dist + 1);
+					continue;
 				}
-				else
-				{
-					int size = qline.size();
-					idx = qline.indexOf(":");
+			}
+		}
+		bindings.append(Binding(current.key, cmd));
 
-					if (idx > 0 && size > idx + 1)
-					{
-						bindings.append(BindingList::Binding(qline.left(idx).toInt(), prefix + qline.mid(idx + 1) + suffix));
-					}
-				}
-			}
-			
+		if (++ii < file.amount())
+		{
+			current = file.commands()[ii];
+			cmd = current.command;
 		}
 	}
-
-	file.close();
 }
 
 void BindingList::Add(int key, QString cmd)
@@ -98,18 +122,31 @@ void BindingList::Add(int key, QString cmd)
 			if (ele.command == cmd)
 				return;
 
-	bindings.append(BindingList::Binding(key, cmd));
+	bindings.append(Binding(key, cmd));
 }
 
-void BindingList::Fill(QListWidget* widget)
+void BindingList::Edit(int index, int key, QString cmd)
+{
+	if (index >= 0 && index < amount())
+	{
+		bindings[index].key = key;
+		bindings[index].command = cmd;
+	}
+}
+
+void BindingList::Fill(QTableWidget* widget)
 {
 	for (Binding binding : bindings)
-		widget->addItem(QString((char)(binding.key)) + " -> " + binding.command);
+	{
+		widget->insertRow(widget->rowCount());
+		widget->setItem(widget->rowCount() - 1, 0, new QTableWidgetItem(QString((char)(binding.key))));
+		widget->setItem(widget->rowCount() - 1, 1, new QTableWidgetItem(binding.command));
+	}
 }
 
-void BindingList::Reorder(QListWidget* widget)
+void BindingList::Reorder(QTableWidget* widget)
 {
-	qSort(bindings.begin(), bindings.end(), BindingList::Binding::isLess);
+	qSort(bindings.begin(), bindings.end(), Binding::isLess);
 
 	widget->clear();
 	Fill(widget);
