@@ -28,6 +28,10 @@ private:
 
     void LimitIndex();
 
-private slots:
-    //
+public slots:
+    void UpdateConfigList();
+    void UpdateCommandList();
+
+    void LoadConfig();
+    void LoadSave();
 };

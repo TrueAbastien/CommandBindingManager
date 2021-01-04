@@ -77,8 +77,8 @@ void ConfigFile::Load()
 QStringList ConfigFile::List()
 {
 	QDir dir("ressources/configs");
-	QStringList files = dir.entryList(QStringList() << ".txt", QDir::Files);
-	foreach(QString file, files)
+	QStringList files = dir.entryList(QStringList() << "*.txt", QDir::Files);
+	for (QString& file : files)
 		file.remove(".txt");
 	return files;
 }

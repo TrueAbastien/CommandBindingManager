@@ -105,10 +105,12 @@ void BindingList::Edit(int index, int key, QString cmd)
 
 void BindingList::Fill(QTableWidget* widget)
 {
+	widget->setRowCount(0);
 	for (Binding binding : bindings)
 	{
 		widget->insertRow(widget->rowCount());
-		widget->setItem(widget->rowCount() - 1, 0, new QTableWidgetItem(QString((char)(binding.key))));
+		widget->setItem(widget->rowCount() - 1, 0, new QTableWidgetItem(QString((char)(binding.key))
+			+ " (" + QString::number(binding.key) + ")"));
 		widget->setItem(widget->rowCount() - 1, 1, new QTableWidgetItem(binding.command));
 	}
 }
@@ -116,9 +118,15 @@ void BindingList::Fill(QTableWidget* widget)
 void BindingList::Reorder(QTableWidget* widget)
 {
 	qSort(bindings.begin(), bindings.end(), Binding::isLess);
-
-	widget->clear();
 	Fill(widget);
+}
+
+QStringList BindingList::commandList() const
+{
+	QStringList list;
+	foreach(Binding bind, bindings)
+		list.append(bind.command);
+	return list;
 }
 
 void BindingList::__replace(QString& target, const QStringList& pool) const

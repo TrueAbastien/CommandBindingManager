@@ -28,6 +28,8 @@ public:
 	void Fill(QTableWidget* widget);
 	void Reorder(QTableWidget* widget);
 
+	QStringList commandList() const;
+
 private:
 	QList<Binding> bindings;
 
