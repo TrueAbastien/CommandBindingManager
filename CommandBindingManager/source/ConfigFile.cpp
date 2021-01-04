@@ -4,6 +4,7 @@ ConfigFile::ConfigFile(const QString& configName)
 	: QFile("ressources/configs/" + configName + ".txt"), _rawCommands({ })
 {
 	this->open(QFile::ReadWrite | QFile::Text);
+	Load();
 }
 
 ConfigFile::~ConfigFile()
@@ -19,43 +20,58 @@ void ConfigFile::Load()
 	while (!in.atEnd())
 	{
 		qline = in.readLine();
-		if (qline.indexOf("#") >= 0)
+		if ((idx = qline.indexOf("#")) >= 0)
+		{
 			qline = qline.left(idx);
+			qline.remove(QRegExp("(\\s+)(?!.+)"));
+		}
 
 		if ((idx = qline.indexOf("prefix=")) >= 0)
 		{
 			_prefix = qline.mid(7);
 		}
+		else if((idx = qline.indexOf("suffix=")) >= 0)
+		{
+			_suffix = qline.mid(7);
+		}
+		else if ((idx = qline.indexOf("model=")) >= 0)
+		{
+			_models.append(qline.mid(idx + 6));
+		}
 		else
 		{
-			if ((idx = qline.indexOf("suffix=")) >= 0)
-			{
-				_suffix = qline.mid(7);
-			}
-			else
-			{
-				if ((idx = qline.indexOf("model=")) >= 0)
-				{
-					_models.append(qline.mid(idx + 6));
-				}
-				else
-				{
-					size = qline.size();
-					idx = qline.indexOf(":");
+			size = qline.size();
+			idx = qline.indexOf(":");
 
-					if (idx > 0 && size > idx + 1)
+			if (idx > 0 && size > idx + 1)
+			{
+				QStringList
+					keys = qline.left(idx).split(","),
+					cmds = qline.mid(idx + 1).split(",");
+
+				for (int idx = 0; idx < keys.size();)
+				{
+					if ((size = keys[idx].indexOf("-")) > 0)
 					{
-						_rawCommands.append(Binding(qline.left(idx).toInt(), qline.mid(idx + 1)));
+						int first = keys[idx].left(size).toInt(),
+							last = keys[idx].mid(size + 1).toInt();
+						for (int ii = first; ii <= last; ++ii)
+							keys.append(QString::number(ii));
+						keys.removeAt(idx);
+					}
+					else idx++;
+				}
+					
+				foreach(QString cmd, cmds)
+				{
+					foreach(QString key, keys)
+					{
+						_rawCommands.append(Binding(key.toInt(), cmd));
 					}
 				}
 			}
 		}
 	}
-}
-
-ConfigFile ConfigFile::Import(const QString& configName)
-{
-	return ConfigFile(configName);
 }
 
 QStringList ConfigFile::List()

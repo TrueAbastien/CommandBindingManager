@@ -31,5 +31,5 @@ public:
 private:
 	QList<Binding> bindings;
 
-	bool __replace(QString& target, const QStringList& pool) const;
+	void __replace(QString& target, const QStringList& pool) const;
 };

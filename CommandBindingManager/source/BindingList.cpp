@@ -20,7 +20,10 @@ void BindingList::LoadAt(const QString& filePath)
 	{
 		qline = in.readLine();
 		if ((idx = qline.indexOf("#")) >= 0)
+		{
 			qline = qline.left(idx);
+			qline.remove(QRegExp("(\\s+)(?!.+)"));
+		}
 
 		idx = qline.indexOf(":");
 		size = qline.size();
@@ -66,7 +69,7 @@ void BindingList::LoadConfig(const ConfigFile& file)
 	QStringList models = { };
 	for (QString model : file.models())
 	{
-		while (!__replace(model, models)) {}
+		__replace(model, models);
 		models.append(model);
 	}
 
@@ -74,7 +77,7 @@ void BindingList::LoadConfig(const ConfigFile& file)
 	for (Binding bind : file.commands())
 	{
 		cmd = bind.command;
-		while (!__replace(cmd, models)) { }
+		__replace(cmd, models);
 
 		cmd.replace("%", QString::number(bind.key));
 		bindings.append(Binding(bind.key, file.prefix() + cmd + file.suffix()));
@@ -118,24 +121,10 @@ void BindingList::Reorder(QTableWidget* widget)
 	Fill(widget);
 }
 
-bool BindingList::__replace(QString& target, const QStringList& pool) const
+void BindingList::__replace(QString& target, const QStringList& pool) const
 {
-	int idx, idx2, dist;
-	QString value;
-	if ((idx = target.indexOf("{")) >= 0)
-	{
-		if ((idx2 = target.indexOf("}")) >= 0)
-		{
-			if ((dist = idx - idx2) > 1)
-			{
-				int modelIndex = target.mid(idx + 1, dist - 1).toInt();
-				value = (modelIndex == 0) ? "%" : (modelIndex > pool.size() ? "" : pool[modelIndex - 1]);
-
-				target.remove(idx, dist + 1);
-				target.insert(idx, value);
-				return false;
-			}
-		}
-	}
-	return true;
+	const int size = pool.size();
+	for (int ii = 0; ii < size; ++ii)
+		target.replace("{" + QString::number(ii + 1) + "}", pool[ii]);
+	target.replace("{0}", "%");
 }

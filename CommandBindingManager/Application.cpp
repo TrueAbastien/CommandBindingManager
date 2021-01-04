@@ -8,6 +8,12 @@ Application::Application(QWidget *parent)
     // Bindings Loading
     bindings.Fill(ui.DisplayWidget);
     LimitIndex();
+
+    // TEST //
+    BindingList _b;
+    ConfigFile _f("Heaven");
+    _b.LoadConfig(_f);
+    _b;
 }
 
 void Application::Cleanup(int errCode)

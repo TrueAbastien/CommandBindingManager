@@ -1,5 +1,9 @@
-prefix=.gm_key 
+# This is a test, wouldn't you agree ?
+prefix=gm_ #Testing
+model=key 
+model={1}say {0}
 
-110:run
-111:test
-112:display
+110:{1}run
+111:{1}test
+112:{1}display
+113,114:{2} # Comma implementation

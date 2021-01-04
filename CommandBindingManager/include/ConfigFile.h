@@ -12,7 +12,6 @@ public:
 	virtual ~ConfigFile();
 	void Load();
 
-	static ConfigFile Import(const QString& configName);
 	static QStringList List();
 
 	QStringList models() const;
